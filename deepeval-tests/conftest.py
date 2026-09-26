@@ -70,3 +70,29 @@ def answer_relevancy_metric():
         ],
         threshold=0.5,
     )
+
+
+def sentiment_relevancy_metric():
+    """Judge relevance to the sentiment task, including neutral inputs."""
+    return GEval(
+        model=get_judge(),
+        name="Sentiment Relevancy",
+        evaluation_steps=[
+            "Read the input text and identify its emotional tone, including "
+            "the possibility that it expresses no emotion.",
+            "Check whether the output provides sentiment analysis of that "
+            "input through overallSentiment, sentimentScore, and emotions.",
+            "A neutral label, a score near zero, and an empty emotions list "
+            "are relevant for factual or logistical input. The output does "
+            "not need to repeat names, places, events, or other topic details.",
+            "Give a low relevance score to output that performs another task, "
+            "discusses unrelated content, or invents emotional context "
+            "unsupported by the input. A sentiment label alone does not "
+            "make an otherwise unrelated response relevant.",
+        ],
+        evaluation_params=[
+            LLMTestCaseParams.INPUT,
+            LLMTestCaseParams.ACTUAL_OUTPUT,
+        ],
+        threshold=0.5,
+    )

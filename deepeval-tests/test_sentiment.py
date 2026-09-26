@@ -14,7 +14,7 @@ from deepeval.dataset import EvaluationDataset
 
 from judge import get_judge
 from api_client import analyze_sentiment
-from conftest import json_schema_metric, output_correctness_metric, answer_relevancy_metric
+from conftest import json_schema_metric, sentiment_relevancy_metric as make_sentiment_relevancy_metric
 
 
 # ---------------------------------------------------------------------------
@@ -152,7 +152,7 @@ sentiment_emotion_metric = GEval(
     threshold=0.6,
 )
 
-sentiment_relevancy_metric = answer_relevancy_metric()
+sentiment_relevancy_metric = make_sentiment_relevancy_metric()
 
 
 # ---------------------------------------------------------------------------
