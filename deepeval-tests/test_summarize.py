@@ -12,6 +12,7 @@ from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from deepeval.metrics import GEval
 from deepeval.dataset import EvaluationDataset
 
+from judge import get_judge
 from api_client import summarize_text
 from conftest import json_schema_metric, output_correctness_metric, answer_relevancy_metric
 
@@ -157,6 +158,7 @@ SCHEMA_DESC = (
 summarize_schema_metric = json_schema_metric(SCHEMA_DESC)
 
 summarize_correctness_metric = GEval(
+    model=get_judge(),
     name="Summary Correctness",
     criteria=(
         "Evaluate whether the summary accurately captures the main ideas of "
@@ -174,6 +176,7 @@ summarize_correctness_metric = GEval(
 )
 
 summarize_conciseness_metric = GEval(
+    model=get_judge(),
     name="Summary Conciseness",
     criteria=(
         "Evaluate whether the summary is concise and avoids unnecessary "
@@ -189,6 +192,7 @@ summarize_conciseness_metric = GEval(
 )
 
 summarize_faithfulness_metric = GEval(
+    model=get_judge(),
     name="Summary Faithfulness",
     criteria=(
         "Evaluate whether every claim in the summary is supported by the "

@@ -12,6 +12,7 @@ from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from deepeval.metrics import GEval
 from deepeval.dataset import EvaluationDataset
 
+from judge import get_judge
 from api_client import analyze_sentiment
 from conftest import json_schema_metric, output_correctness_metric, answer_relevancy_metric
 
@@ -117,6 +118,7 @@ SCHEMA_DESC = (
 sentiment_schema_metric = json_schema_metric(SCHEMA_DESC)
 
 sentiment_correctness_metric = GEval(
+    model=get_judge(),
     name="Sentiment Correctness",
     criteria=(
         "Evaluate whether the sentiment analysis is accurate for the input text. "
@@ -135,6 +137,7 @@ sentiment_correctness_metric = GEval(
 )
 
 sentiment_emotion_metric = GEval(
+    model=get_judge(),
     name="Emotion Detection Accuracy",
     criteria=(
         "Evaluate whether the emotions detected in the actual output are "

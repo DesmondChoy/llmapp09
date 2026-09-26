@@ -6,6 +6,8 @@ import pytest
 from deepeval.metrics import GEval
 from deepeval.test_case import LLMTestCaseParams
 
+from judge import get_judge
+
 
 # ---------------------------------------------------------------------------
 # Reusable GEval metric factories
@@ -14,6 +16,7 @@ from deepeval.test_case import LLMTestCaseParams
 def json_schema_metric(schema_description: str):
     """Creates a GEval metric that checks JSON schema compliance."""
     return GEval(
+        model=get_judge(),
         name="JSON Schema Compliance",
         criteria=(
             "Evaluate whether the actual output is valid JSON that conforms to "
@@ -31,6 +34,7 @@ def json_schema_metric(schema_description: str):
 def output_correctness_metric():
     """Creates a GEval metric that checks factual/logical correctness."""
     return GEval(
+        model=get_judge(),
         name="Output Correctness",
         criteria=(
             "Determine whether the actual output is logically correct and "
@@ -51,6 +55,7 @@ def answer_relevancy_metric():
     Q&A format), this works for classification and analysis endpoints where
     the output is structured metadata about the input text."""
     return GEval(
+        model=get_judge(),
         name="Answer Relevancy",
         criteria=(
             "Evaluate whether the actual output is topically relevant to the "

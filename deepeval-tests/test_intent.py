@@ -12,6 +12,7 @@ from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from deepeval.metrics import GEval
 from deepeval.dataset import EvaluationDataset
 
+from judge import get_judge
 from api_client import detect_intent
 from conftest import json_schema_metric, output_correctness_metric, answer_relevancy_metric
 
@@ -121,6 +122,7 @@ SCHEMA_DESC = (
 intent_schema_metric = json_schema_metric(SCHEMA_DESC)
 
 intent_category_metric = GEval(
+    model=get_judge(),
     name="Intent Category Accuracy",
     criteria=(
         "Evaluate whether the intentCategory in the actual output correctly "
@@ -138,6 +140,7 @@ intent_category_metric = GEval(
 )
 
 intent_primary_metric = GEval(
+    model=get_judge(),
     name="Primary Intent Accuracy",
     criteria=(
         "Evaluate whether the primaryIntent in the actual output accurately "

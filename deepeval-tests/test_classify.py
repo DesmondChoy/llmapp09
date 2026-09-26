@@ -12,6 +12,7 @@ from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 from deepeval.metrics import GEval
 from deepeval.dataset import EvaluationDataset
 
+from judge import get_judge
 from api_client import classify_text
 from conftest import json_schema_metric, output_correctness_metric, answer_relevancy_metric
 
@@ -110,6 +111,7 @@ SCHEMA_DESC = (
 classify_schema_metric = json_schema_metric(SCHEMA_DESC)
 
 classify_correctness_metric = GEval(
+    model=get_judge(),
     name="Classification Correctness",
     criteria=(
         "Evaluate whether the classification labels and primary category in the "

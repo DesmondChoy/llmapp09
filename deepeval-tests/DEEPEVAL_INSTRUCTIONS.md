@@ -3,6 +3,7 @@
   deepeval-tests/
   ├── requirements.txt        # Python dependencies
   ├── api_client.py           # HTTP client for all 4 API endpoints
+  ├── judge.py               # Ollama Cloud judge
   ├── conftest.py             # Shared metric factories and fixtures
   ├── test_classify.py        # 5 inputs × 3 metrics = 15 tests
   ├── test_sentiment.py       # 5 inputs × 4 metrics = 20 tests
@@ -35,37 +36,52 @@
 
   - JSON Schema Compliance (GEval) -- validates response structure matches the DTO
   - Output Correctness (GEval) -- validates the analysis is accurate for the input
-  - Answer Relevancy (AnswerRelevancyMetric) -- validates response relevance to input
+  - Answer Relevancy (GEval) -- validates response relevance to input
   - Endpoint-specific metrics (GEval):
     - Classification: label/category accuracy
     - Sentiment: emotion detection accuracy
     - Summarize: conciseness + faithfulness (no hallucinated facts)
     - Intent: category accuracy + primary intent accuracy
 
-  # How to Run
+## Run locally
 
-  cd /Users/Darryl/Downloads/projects/llmapp04/deepeval-tests
+From the `llmapp09` repository root, install the evaluation dependencies:
 
-  # 1. Install dependencies
-  pip install -r requirements.txt
+```bash
+python -m pip install -r deepeval-tests/requirements.txt
+export OLLAMA_API_KEY="your-ollama-api-key"
+export OLLAMA_BASE_URL="https://ollama.com"
+export DEEPEVAL_OLLAMA_MODEL="gemma4:31b"
+docker compose up -d llm-multiroute
+cd deepeval-tests
+deepeval test run test_classify.py test_sentiment.py test_summarize.py test_intent.py -v
+```
 
-  # 2. Set OpenAI API key (used as the evaluation judge LLM)
-  export OPENAI_API_KEY="your-openai-api-key"
+The tests call the application on port 8080. The judge calls Ollama Cloud using
+`OLLAMA_API_KEY` and `OLLAMA_BASE_URL`, which defaults to `https://ollama.com`.
+`DEEPEVAL_OLLAMA_MODEL` defaults to `gemma4:31b`. No OpenAI API key or local
+Ollama installation is needed.
 
-  # 3. Make sure the Spring Boot app is running on localhost:8080
+Ollama Cloud does not support enforced JSON schemas. The judge includes the
+required schema in its prompt and validates the returned JSON before DeepEval
+uses it. Invalid responses fail the evaluation rather than receiving a score.
 
-  # 4. Run all tests
-  deepeval test run test_classify.py test_sentiment.py test_summarize.py
-  test_intent.py
+## GitHub Actions
 
-  # Or run a single endpoint's tests
-  deepeval test run test_classify.py
+Add `OLLAMA_API_KEY` as a repository Actions secret. `OLLAMA_BASE_URL` is an
+optional secret; the workflow defaults to `https://ollama.com`. To choose another
+cloud judge, set the repository Actions variable `DEEPEVAL_OLLAMA_MODEL`.
 
-  # Run in parallel for speed
-  deepeval test run test_classify.py test_sentiment.py test_summarize.py
-  test_intent.py -n 4
+The workflow checks the judge integration, builds the application backend, and
+runs all four suites. Both application requests and judge requests consume
+Ollama Cloud usage. Changing the judge can change scores; previous OpenAI scores
+are not directly comparable.
 
-  # Verbose output
-  deepeval test run test_classify.py -v
+## Check the integration without model calls
 
-  The tests call each endpoint live on localhost:8080, then use OpenAI (as the judge LLM) to evaluate whether the responses are correct, relevant, properly structured, and free of hallucinations.
+```bash
+python -m pytest deepeval-tests/unit -q
+```
+
+Run this command from the repository root. These checks cover authentication,
+request routing, response validation, and judge selection across the four suites.
