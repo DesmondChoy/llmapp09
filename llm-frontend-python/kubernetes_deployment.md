@@ -1,26 +1,11 @@
-# deployment script at llm-frontend-python/k8s/deployment.yaml. The
-  
-  ## file includes:
-  ┌────────────┬───────────────────────────────────────────────┐
-  │  Resource  │                     Name                      │
-  ├────────────┼───────────────────────────────────────────────┤
-  │ Namespace  │ llm-frontend                                  │
-  ├────────────┼───────────────────────────────────────────────┤
-  │ Deployment │ llm-frontend-app                              │
-  ├────────────┼───────────────────────────────────────────────┤
-  │ Container  │ llm-frontend-container                        │
-  ├────────────┼───────────────────────────────────────────────┤
-  │ Service    │ llm-frontend-service (ClusterIP on port 5000) │
-  ├────────────┼───────────────────────────────────────────────┤
-  │ ConfigMap  │ llm-frontend-config                           │
-  └────────────┴───────────────────────────────────────────────┘
-  
-  ## Key configurations:
-  - Container port: 5000 (matching the Flask app)
-  - Image: insipidity/llm-frontend-python:latest
-  - Backend URL configured via ConfigMap to connect to the llm-multiroute service  
-  - Health probes pointing to the root endpoint /
-  - Resource limits: 256Mi memory, 250m CPU
-  
-  ## To deploy:
-  kubectl apply -f llm-frontend-python/k8s/deployment.yaml 
+# Frontend Kubernetes deployment
+
+Follow [Deploy to Minikube](../README.md#deploy-to-minikube).
+
+The manifest defines namespace `llm-frontend`, a Deployment, Service, and
+ConfigMap. The frontend listens on 5000 and reaches the backend through
+`llm-multiroute-service.llm-multiroute-backend.svc.cluster.local:8080`.
+
+The default image is `insipidity/llm-frontend-python:latest`; the deployment
+script can select another tag. Use `5001:5000` for local port forwarding if
+port 5000 is already occupied.

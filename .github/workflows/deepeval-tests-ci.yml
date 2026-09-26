@@ -6,12 +6,14 @@ on:
     paths:
       - 'deepeval-tests/**'
       - 'llm-multiroute/**'
+      - 'docker-compose.yml'
       - '.github/workflows/deepeval-tests-ci.yml'
   pull_request:
     branches: [main, master]
     paths:
       - 'deepeval-tests/**'
       - 'llm-multiroute/**'
+      - 'docker-compose.yml'
       - '.github/workflows/deepeval-tests-ci.yml'
   workflow_dispatch:
 
@@ -55,7 +57,7 @@ jobs:
         run: |
           echo "Waiting for backend to be ready..."
           for i in $(seq 1 30); do
-            if curl -s http://localhost:8080/api/ai/routes > /dev/null 2>&1; then
+            if curl -fsS http://localhost:8080/api/ai/routes > /dev/null 2>&1; then
               echo "Backend is ready."
               exit 0
             fi
@@ -84,4 +86,4 @@ jobs:
 
       - name: Tear down backend
         if: always()
-        run: docker compose down
+        run: docker compose down --volumes

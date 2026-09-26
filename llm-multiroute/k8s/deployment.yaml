@@ -12,6 +12,8 @@ metadata:
     app: llm-multiroute-app
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: llm-multiroute-app
@@ -22,8 +24,8 @@ spec:
     spec:
       containers:
         - name: llm-multiroute-container
-          image: insipidity/llm-multiroute:1.0.0
-          imagePullPolicy: IfNotPresent
+          image: insipidity/llm-multiroute:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               protocol: TCP
@@ -65,6 +67,26 @@ spec:
                 secretKeyRef:
                   name: llm-multiroute-secret
                   key: OLLAMA_API_KEY
+            - name: LANGFUSE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: llm-multiroute-config
+                  key: LANGFUSE_HOST
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llm-multiroute-secret
+                  key: LANGFUSE_PUBLIC_KEY
+                  optional: true
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llm-multiroute-secret
+                  key: LANGFUSE_SECRET_KEY
+                  optional: true
+          volumeMounts:
+            - name: metrics
+              mountPath: /app/metrics
           resources:
             requests:
               memory: "256Mi"
@@ -84,6 +106,10 @@ spec:
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 5
+      volumes:
+        - name: metrics
+          persistentVolumeClaim:
+            claimName: llm-metrics
 ---
 apiVersion: v1
 kind: Service
@@ -114,13 +140,13 @@ data:
   LANGFUSE_HOST: "https://cloud.langfuse.com"
 ---
 apiVersion: v1
-kind: Secret
+kind: PersistentVolumeClaim
 metadata:
-  name: llm-multiroute-secret
+  name: llm-metrics
   namespace: llm-multiroute-backend
-type: Opaque
-data:
-  OLLAMA_API_KEY: 
-  # Base64 encoded API key - replace with: echo -n 'your-api-key' | base64
-  LANGFUSE_PUBLIC_KEY: 
-  LANGFUSE_SECRET_KEY: 
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

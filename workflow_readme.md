@@ -1,96 +1,31 @@
-# GitHub Actions Workflows 
+# Workflows and vulnerability policy
 
-  ## 1. llm-multiroute-ci.yml — Python Pipeline
-  - Triggers: push/PR on llm-multiroute/** changes
-  - Jobs: Lint (Ruff) → Unit Tests (pytest) → Docker Build
-  - Pipeline: 3-stage sequential — lint must pass before tests, tests  before Docker build
-  1. llm-frontend-python-ci.yml — Python Pipeline
-  - Triggers: push/PR on llm-frontend-python/** changes
-  - Jobs: Lint (Ruff) → Docker Build
-  - Pipeline: 2-stage sequential — no tests exist, so lint then build  
+The four workflows and required secrets are described in [README.md](README.md).
+Both image pipelines build, scan, and publish the exact scanned image.
+Trivy Action is pinned to the v0.36.0 commit and runs Trivy v0.74.0. Scan output
+is retained as a JSON artifact even when the scan fails. HIGH and CRITICAL
+findings block publication, including unfixed findings. `.trivyignore` has no exceptions.
 
-  ## 2. promptfoo-tests-ci.yml — Node.js Pipeline
-  - Triggers: push/PR on promptfoo-tests/** OR llm-multiroute/**
-  changes
-  - Jobs: Single job that starts the backend via docker compose, waits for health, runs all 4 PromptFoo evaluations, then tears down
-  - Pipeline: Integration test pipeline using Node.js 20 (different runtime from the Python projects) 
-  - Required secrets: OLLAMA_API_KEY, OLLAMA_BASE_URL
-  
-  ## 3. deepeval-tests-ci.yml — Python Pipeline (with Docker integration)
-  - Triggers: push/PR on deepeval-tests/** OR llm-multiroute/** changes
-  - Jobs: Single job that installs Python deps, starts the backend via docker compose, waits for health, runs all 4 DeepEval test suites, then tears down
-  - Pipeline: LLM evaluation pipeline using Python 3.12 + DeepEval
-  judge model on Ollama Cloud
-  - Required secret: OLLAMA_API_KEY
-  - Optional secret: OLLAMA_BASE_URL (defaults to https://ollama.com)
-  Required GitHub Repository Secrets
-  You'll need to add these secrets in your repo settings (Settings >
-  Secrets and variables > Actions):
-  Secret: OLLAMA_API_KEY
-  Used By: promptfoo, deepeval
-  Purpose: Authenticate with Ollama cloud API
-  ────────────────────────────────────────
-  Secret: OLLAMA_BASE_URL
-  Used By: promptfoo, deepeval
-  Purpose: Ollama cloud endpoint URL
-  ────────────────────────────────────────
-  Optional repository variable: DEEPEVAL_OLLAMA_MODEL
-  Used By: deepeval only
-  Purpose: Ollama Cloud judge model (defaults to gemma4:31b).
-  No OpenAI API key or local model download is required.
+The previous Debian-based images failed with 38 HIGH operating-system findings
+each. Removing the old ignore list also exposed vulnerable backend Starlette
+and pip-bundled packages. Images now use Python 3.12 on Alpine 3.24, upgrade
+Alpine packages, and remove pip after installation. FastAPI is upgraded and
+Starlette has an explicit security floor. Install additional Guardrails Hub
+validators at build time.
 
-## Updated pipeline stages
+Any future exception must identify the package, application exposure, reason
+for accepting the finding, and a review date. A failing scan does not establish
+successful publication.
 
-  llm-multiroute: Lint → Unit Tests → Build Image → Trivy Scan → Push  
-  llm-frontend-python: Lint → Build Image → Trivy Scan → Push          
-                                                                       
-  What the Trivy step does                                             
-                                                                       
-  1. Build for scanning — The image is built with load: true into the  
-  local Docker daemon (no push yet), tagged as <image>:scan            
-  2. Trivy scan — aquasecurity/trivy-action scans the local image for  
-  vulnerabilities                                                      
-    - Reports in table format for readable CI output                   
-    - exit-code: '1' — fails the workflow if vulnerabilities are found 
-    - severity: 'CRITICAL,HIGH' — only blocks on CRITICAL and HIGH     
-  severity issues (MEDIUM/LOW won't fail the build)                    
-  3. Push — Only runs if the Trivy scan passes and it's not a pull     
-  request. Uses the build cache so the push is fast since the image    
-  layers already exist. 
+Verify changes by running Ruff, backend tests, image builds and scans, workflow
+and manifest validation, and frontend-to-backend requests. Check that metrics
+survive container replacement. After pushing, inspect Actions results and Docker
+Hub publication, and run both evaluation workflows when application behavior changes.
 
+Image jobs use AMD64 runners. Native ARM Minikube deployment is documented in
+the root README. Image workflow filters include `.trivyignore`; evaluation
+filters include Compose. Image workflows support version tags and manual dispatch.
 
-    .trivyignore created at the repo root with CVE-2026-0861 suppressed —
-   the glibc integer overflow in memalign that has no upstream fix     
-  available yet.                                                       
-                                                                       
-  Both workflows updated to pass trivyignores: .trivyignore to the     
-  Trivy action, so the scanner skips that CVE.                         
-                                                                       
-  The pipeline will now pass since the 6 OpenSSL findings were already 
-  resolved by the apt-get upgrade in the Dockerfiles, and the 2        
-  remaining glibc findings are suppressed. Once Debian publishes a     
-  glibc patch, you can remove CVE-2026-0861 from .trivyignore and the  
-  upgrade step will pick up the fix automatically.  
-
-  # Fixed...
-
-Dependencies resolve cleanly. FastAPI 0.115.6 pulls in starlette     
-  0.41.3, which is well past the 0.40.0 fix threshold for              
-  CVE-2024-47874.                                                      
-                                                                       
-  Summary                                                              
-  Package: fastapi                                                     
-  Before: 0.115.0                                                      
-  After: 0.115.6                                                       
-  Why: Brings in starlette >= 0.40.0                                   
-  ────────────────────────────────────────                             
-  Package: uvicorn                                                     
-  Before: 0.30.6                                                       
-  After: 0.32.1                                                        
-  Why: Compatible with updated FastAPI                                 
-  ────────────────────────────────────────                             
-  Package: starlette (transitive)                                      
-  Before: 0.38.6                                                       
-  After: 0.41.3                                                        
-  Why: Fixes CVE-2024-47874 (DoS via multipart/form-data)              
-  This should clear the Trivy scan for the llm-multiroute image.
+Official references: [Trivy Action](https://github.com/aquasecurity/trivy-action),
+[Python images](https://hub.docker.com/_/python).
+Actual results: [verification evidence](docs/verification.md).

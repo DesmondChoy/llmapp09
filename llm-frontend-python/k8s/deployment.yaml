@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: llm-frontend-container
-          image: insipidity/llm-frontend-python:1.0.0
-          imagePullPolicy: IfNotPresent
+          image: insipidity/llm-frontend-python:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
               protocol: TCP

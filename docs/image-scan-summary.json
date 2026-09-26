@@ -1,0 +1,68 @@
+{
+  "checked_at_utc": "2026-09-26T15:23:15.299089+00:00",
+  "scanner": "Trivy 0.74.0",
+  "policy": {
+    "severities": [
+      "HIGH",
+      "CRITICAL"
+    ],
+    "ignore_unfixed": false,
+    "exceptions": []
+  },
+  "sources": {
+    "llm-multiroute/Dockerfile": "9532eaf1836cf4ac49eb092574502032b6b239a4fc9c0d5c8721785ccbdba98b",
+    "llm-multiroute/requirements.txt": "538c2916e55eaad4877dfb17ba34f8dd83d693bb0c1d544c7e0a68446e8229fb",
+    "llm-frontend-python/Dockerfile": "501afcf08ec0108100f5fa6a3ffd3d11e88153e420c6b77d4381acc5f3504d24",
+    "llm-frontend-python/requirements.txt": "d281cb6b3ef6be72ba9d061ca6815138b51220ec19bfd803debf7f85754e0972"
+  },
+  "images": [
+    {
+      "component": "backend",
+      "platform": "linux/arm64",
+      "image_id": "sha256:f449bab30333051c8aee3daa7d095404f48fe6c432d6bcf960519c3f54455e1e",
+      "os": {
+        "Family": "alpine",
+        "Name": "3.24.2"
+      },
+      "high": 0,
+      "critical": 0,
+      "report_sha256": "66eda32443052af2c7bb54961ee86ced8f0c4de696dbf7abaa1c664480445645"
+    },
+    {
+      "component": "frontend",
+      "platform": "linux/arm64",
+      "image_id": "sha256:30babccc79dd048642bd4331051432cbe46fa3d8fbcb11d0cfe2fda2dbbf1e2e",
+      "os": {
+        "Family": "alpine",
+        "Name": "3.24.2"
+      },
+      "high": 0,
+      "critical": 0,
+      "report_sha256": "a9247f85cde4bac32fe75056abab14fa67feb38ba98c025272d5401d115c2686"
+    },
+    {
+      "component": "backend",
+      "platform": "linux/amd64",
+      "image_id": "sha256:487e7cac634e8b2a92025b5bc8777234213c044189820d0b25779b75b4049a0e",
+      "os": {
+        "Family": "alpine",
+        "Name": "3.24.2"
+      },
+      "high": 0,
+      "critical": 0,
+      "report_sha256": "f176133737f2f19453b04fd7d0c2df11f39b7350259552889bc0d63a1e0bbcb7"
+    },
+    {
+      "component": "frontend",
+      "platform": "linux/amd64",
+      "image_id": "sha256:7c1fc8860307b0325a0b4345d05ce4deb0f5239e24f665a71dc6329e68db465c",
+      "os": {
+        "Family": "alpine",
+        "Name": "3.24.2"
+      },
+      "high": 0,
+      "critical": 0,
+      "report_sha256": "3a13107b6a690b5948086ab6e0057045d58b04d47ddfde0f0f4cba13dcbdf205"
+    }
+  ]
+}
