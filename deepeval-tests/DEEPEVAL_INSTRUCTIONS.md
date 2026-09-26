@@ -52,6 +52,7 @@ python -m pip install -r deepeval-tests/requirements.txt
 export OLLAMA_API_KEY="your-ollama-api-key"
 export OLLAMA_BASE_URL="https://ollama.com"
 export DEEPEVAL_OLLAMA_MODEL="gemma4:31b"
+export DEEPEVAL_PER_TASK_TIMEOUT_SECONDS_OVERRIDE=900
 docker compose up -d llm-multiroute
 cd deepeval-tests
 deepeval test run test_classify.py test_sentiment.py test_summarize.py test_intent.py -v
@@ -65,6 +66,18 @@ Ollama installation is needed.
 Ollama Cloud does not support enforced JSON schemas. The judge includes the
 required schema in its prompt and validates the returned JSON before DeepEval
 uses it. Invalid responses fail the evaluation rather than receiving a score.
+
+Judge requests allow up to three attempts for timeouts, connection failures,
+and HTTP 429, 500, 502, 503, or 504. Retries wait 2 seconds and then 4 seconds.
+Each attempt uses a 10-second connection timeout and 120-second read timeout.
+After the third failure, the request error fails the test. Authentication errors,
+certificate errors, invalid JSON, and schema errors fail immediately. Scores do
+not trigger retries. Warning logs report the error type and attempt number
+without including prompts, credentials, or response bodies.
+
+The 900-second DeepEval per-test deadline accommodates retries while generating
+GEval evaluation steps and scoring. Its default 180-second deadline can cut
+retries short. CI sets this override and retains its 60-minute job limit.
 
 ## GitHub Actions
 
@@ -85,3 +98,5 @@ python -m pytest deepeval-tests/unit -q
 
 Run this command from the repository root. These checks cover authentication,
 request routing, response validation, and judge selection across the four suites.
+They also check recovery, retry exhaustion, backoff, and immediate failure for
+errors that retries cannot resolve. These tests stub requests and waiting.

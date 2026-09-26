@@ -2,13 +2,20 @@
 
 import asyncio
 import json
+import logging
 import os
 import re
+import time
 from functools import lru_cache
 
 import requests
 from deepeval.models import DeepEvalBaseLLM
 from pydantic import BaseModel
+
+
+logger = logging.getLogger(__name__)
+MAX_REQUEST_ATTEMPTS = 3
+RETRYABLE_HTTP_STATUSES = {429, 500, 502, 503, 504}
 
 
 class OllamaCloudJudge(DeepEvalBaseLLM):
@@ -35,18 +42,40 @@ class OllamaCloudJudge(DeepEvalBaseLLM):
                 "Do not include Markdown fences or commentary.\n"
                 + json.dumps(schema.model_json_schema())
             )
-        response = requests.post(
-            f"{self.base_url}/api/chat",
-            headers={"Authorization": f"Bearer {self.api_key}"},
-            json={
-                "model": self.name,
-                "messages": [{"role": "user", "content": prompt}],
-                "stream": False,
-                "options": {"temperature": 0},
-            },
-            timeout=120,
-        )
-        response.raise_for_status()
+        for attempt in range(1, MAX_REQUEST_ATTEMPTS + 1):
+            try:
+                response = requests.post(
+                    f"{self.base_url}/api/chat",
+                    headers={"Authorization": f"Bearer {self.api_key}"},
+                    json={
+                        "model": self.name,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "stream": False,
+                        "options": {"temperature": 0},
+                    },
+                    timeout=(10, 120),
+                )
+                response.raise_for_status()
+                break
+            except requests.exceptions.SSLError:
+                # Certificate/configuration errors need intervention.
+                raise
+            except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as exc:
+                failure = type(exc).__name__
+                if isinstance(exc, requests.HTTPError):
+                    if exc.response is None or exc.response.status_code not in RETRYABLE_HTTP_STATUSES:
+                        raise
+                    failure = f"HTTP {exc.response.status_code}"
+                    exc.response.close()
+                if attempt == MAX_REQUEST_ATTEMPTS:
+                    raise
+                delay = 2 ** attempt
+                logger.warning(
+                    "Ollama judge request failed (%s); retrying in %s seconds (attempt %s/%s).",
+                    failure, delay, attempt + 1, MAX_REQUEST_ATTEMPTS,
+                )
+                time.sleep(delay)
+        # Invalid responses and low scores must not trigger another model call.
         content = response.json()["message"]["content"].strip()
         if schema is None:
             return content
